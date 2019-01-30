@@ -59,10 +59,10 @@ ThreadPool::ThreadPool(unsigned ThreadCount)
           // Adjust `ActiveThreads`, in case someone waits on ThreadPool::wait()
           std::unique_lock<std::mutex> LockGuard(CompletionLock);
           --ActiveThreads;
-        }
 
-        // Notify task completion, in case someone waits on ThreadPool::wait()
-        CompletionCondition.notify_all();
+          // Notify task completion, in case someone waits on ThreadPool::wait()
+          CompletionCondition.notify_all();
+        }
       }
     });
   }
@@ -90,8 +90,8 @@ std::shared_future<void> ThreadPool::asyncImpl(TaskTy Task) {
     assert(EnableFlag && "Queuing a thread during ThreadPool destruction");
 
     Tasks.push(std::move(PackagedTask));
+    QueueCondition.notify_one();
   }
-  QueueCondition.notify_one();
   return Future.share();
 }
 
@@ -100,8 +100,8 @@ ThreadPool::~ThreadPool() {
   {
     std::unique_lock<std::mutex> LockGuard(QueueLock);
     EnableFlag = false;
+    QueueCondition.notify_all();
   }
-  QueueCondition.notify_all();
   for (auto &Worker : Threads)
     Worker.join();
 }

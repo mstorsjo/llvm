@@ -77,16 +77,16 @@ public:
   ~ThreadPoolExecutor() override {
     std::unique_lock<std::mutex> Lock(Mutex);
     Stop = true;
-    Lock.unlock();
     Cond.notify_all();
+    Lock.unlock();
     // Wait for ~Latch.
   }
 
   void add(std::function<void()> F) override {
     std::unique_lock<std::mutex> Lock(Mutex);
     WorkStack.push(F);
-    Lock.unlock();
     Cond.notify_one();
+    Lock.unlock();
   }
 
 private:
